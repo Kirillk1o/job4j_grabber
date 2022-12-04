@@ -17,7 +17,6 @@ import static org.quartz.SimpleScheduleBuilder.*;
  */
 
 public class AlertRabbit {
-    private Properties properties;
     /*
      * В методе main реализована работа планировщика
      * sheduler: добавление задачи, которые хотим выполнять с периодичностью
@@ -29,16 +28,17 @@ public class AlertRabbit {
 
     /*
      * метод реализует чтение файла с настройками
-     * @return возвращает значение интервала времени для запуска задачи
+     * @return возвращает значение интервала времени для запуска задачи, которое описано в файле
      */
-    public static int getTimeIntervalFromProperties(Properties properties) {
+    public static Properties getTimeIntervalFromProperties() {
+        Properties properties;
         try (InputStream in = AlertRabbit.class.getClassLoader().getResourceAsStream("rabbit.properties")) {
             properties = new Properties();
             properties.load(in);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return Integer.parseInt(properties.getProperty("rabbit.properties"));
+        return properties;
     }
 
     public static void main(String[] args) {
@@ -47,7 +47,7 @@ public class AlertRabbit {
             scheduler.start();
             JobDetail job = newJob(Rabbit.class).build();
             SimpleScheduleBuilder times = simpleSchedule()
-                    .withIntervalInSeconds(10)
+                    .withIntervalInSeconds(Integer.parseInt(getTimeIntervalFromProperties().getProperty("rabbit.interval")))
                     .repeatForever();
             Trigger trigger = newTrigger()
                     .startNow()
