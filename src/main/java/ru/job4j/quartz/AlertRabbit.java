@@ -67,7 +67,7 @@ public class AlertRabbit {
             Connection connection = initConection(properties);
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();
-            JobDataMap data = new JobDataMap();
+            JobDataMap data = new JobDataMap(;
             data.put("connection", connection);
             JobDetail job = newJob(Rabbit.class)
                     .usingJobData(data)
