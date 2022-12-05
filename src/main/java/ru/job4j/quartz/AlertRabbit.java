@@ -1,10 +1,14 @@
 package ru.job4j.quartz;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.Properties;
 
 import static org.quartz.JobBuilder.*;
@@ -17,6 +21,7 @@ import static org.quartz.SimpleScheduleBuilder.*;
  */
 
 public class AlertRabbit {
+    private static final Logger LOGGER = LogManager.getLogger(AlertRabbit.class.getName());
     /*
      * В методе main реализована работа планировщика
      * sheduler: добавление задачи, которые хотим выполнять с периодичностью
@@ -41,11 +46,32 @@ public class AlertRabbit {
         return properties;
     }
 
+    private static Connection initConection(Properties properties) {
+        try (InputStream in = AlertRabbit.class.getClassLoader()
+                .getResourceAsStream("rabbit.properties")) {
+            properties.load(in);
+            Class.forName(properties.getProperty("driver_class"));
+            return DriverManager.getConnection(
+                    properties.getProperty("url"),
+                    properties.getProperty("login"),
+                    properties.getProperty("password")
+            );
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
     public static void main(String[] args) {
         try {
+            Properties properties = getTimeIntervalFromProperties();
+            Connection connection = initConection(properties);
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             scheduler.start();
-            JobDetail job = newJob(Rabbit.class).build();
+            JobDataMap data = new JobDataMap();
+            data.put("connection", connection);
+            JobDetail job = newJob(Rabbit.class)
+                    .usingJobData(data)
+                    .build();
             SimpleScheduleBuilder times = simpleSchedule()
                     .withIntervalInSeconds(Integer.parseInt(getTimeIntervalFromProperties().getProperty("rabbit.interval")))
                     .repeatForever();
@@ -54,8 +80,11 @@ public class AlertRabbit {
                     .withSchedule(times)
                     .build();
             scheduler.scheduleJob(job, trigger);
-        } catch (SchedulerException se) {
-            se.printStackTrace();
+            Thread.sleep(10000);
+            scheduler.shutdown();
+            System.out.println();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -66,6 +95,14 @@ public class AlertRabbit {
         @Override
         public void execute(JobExecutionContext context) {
             System.out.println("Rabbit runs here ...");
+            Connection connection = (Connection) context.getJobDetail().getJobDataMap().get("connection");
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "insert into rabbit (created_date) values (?)")) {
+                statement.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+                statement.execute();
+            } catch (SQLException e) {
+                LOGGER.error(e.getMessage(), e);
+            }
         }
     }
 }
