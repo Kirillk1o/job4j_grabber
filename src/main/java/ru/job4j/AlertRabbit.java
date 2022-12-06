@@ -46,19 +46,13 @@ public class AlertRabbit {
         return properties;
     }
 
-    private static Connection initConection(Properties properties) {
-        try (InputStream in = AlertRabbit.class.getClassLoader()
-                .getResourceAsStream("rabbit.properties")) {
-            properties.load(in);
-            Class.forName(properties.getProperty("driver_class"));
-            return DriverManager.getConnection(
-                    properties.getProperty("url"),
-                    properties.getProperty("login"),
-                    properties.getProperty("password")
-            );
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e);
-        }
+    private static Connection initConection(Properties properties) throws ClassNotFoundException, SQLException {
+        Class.forName(properties.getProperty("driver_class"));
+        return DriverManager.getConnection(
+                properties.getProperty("url"),
+                properties.getProperty("login"),
+                properties.getProperty("password")
+        );
     }
 
     public static void main(String[] args) {
@@ -73,7 +67,7 @@ public class AlertRabbit {
                     .usingJobData(data)
                     .build();
             SimpleScheduleBuilder times = simpleSchedule()
-                    .withIntervalInSeconds(Integer.parseInt(getTimeIntervalFromProperties().getProperty("rabbit.interval")))
+                    .withIntervalInSeconds(Integer.parseInt(properties.getProperty("rabbit.interval")))
                     .repeatForever();
             Trigger trigger = newTrigger()
                     .startNow()
@@ -95,11 +89,12 @@ public class AlertRabbit {
         @Override
         public void execute(JobExecutionContext context) {
             System.out.println("Rabbit runs here ...");
-            Connection connection = (Connection) context.getJobDetail().getJobDataMap().get("connection");
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "insert into rabbit (created_date) values (?)")) {
-                statement.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
-                statement.execute();
+            try (Connection connection = (Connection) context.getJobDetail().getJobDataMap().get("connection")) {
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "insert into rabbit (created_date) values (?)")) {
+                    statement.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+                    statement.execute();
+                }
             } catch (SQLException e) {
                 LOGGER.error(e.getMessage(), e);
             }
