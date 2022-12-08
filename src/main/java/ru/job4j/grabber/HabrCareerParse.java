@@ -1,5 +1,3 @@
-
-
 package ru.job4j.grabber;
 
 import org.jsoup.Connection;
@@ -20,9 +18,9 @@ public class HabrCareerParse {
 
     private static final String PAGE_LINK = String.format("%s/vacancies/java_developer", SOURCE_LINK);
 
-    private static String retrieveDescription(String link) throws IOException {
+    private String retrieveDescription(String link) throws IOException {
         Document document = Jsoup.connect(link).get();
-        Element descriptionElement = document.selectFirst(".basic-section--appearance-vacancy-description");
+        Element descriptionElement = document.selectFirst(".style-ugc");
         return descriptionElement.text();
     }
 
@@ -40,7 +38,7 @@ public class HabrCareerParse {
                 String link = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
                 String description = null;
                 try {
-                    description = retrieveDescription(link);
+                    description = new HabrCareerParse().retrieveDescription(link);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
