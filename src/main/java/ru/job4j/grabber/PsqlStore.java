@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-public class PsqlStore implements Store {
+public class PsqlStore implements Store, AutoCloseable {
     private static final Logger LOGGER = LogManager.getLogger(PsqlStore.class.getName());
     private Connection connection;
 
@@ -119,19 +119,22 @@ public class PsqlStore implements Store {
         }
     }
 
-    public static void main(String[] args)  {
+    public static void main(String[] args) {
         Properties config = new Properties();
         try (InputStream in = PsqlStore.class.getClassLoader().
-                getResourceAsStream("rabbit.properties")) {
+                getResourceAsStream("rabbit.properties");) {
             config.load(in);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        PsqlStore psql = new PsqlStore(config);
-        Post post = new Post("Java разработчик в Tinkoff Black", "https://career.habr.com/vacancies/1000107412",
-                "Tinkoff Black — ядро экосистемы Тинькофф банка. Именно с этого направления начинается знакомство пользователя с продуктами компании.",
-                LocalDateTime.now());
-        psql.save(post);
-        System.out.println(psql.findById(post.getId()));
+        try (PsqlStore psql = new PsqlStore(config)) {
+            Post post = new Post("Java разработчик в Tinkoff Black", "https://career.habr.com/vacancies/1000107412",
+                    "Tinkoff Black — ядро экосистемы Тинькофф банка. Именно с этого направления начинается знакомство пользователя с продуктами компании.",
+                    LocalDateTime.now());
+            psql.save(post);
+            System.out.println(psql.findById(post.getId()));
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+        }
     }
 }
