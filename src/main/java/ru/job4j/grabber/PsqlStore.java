@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-public class PsqlStore implements Store, AutoCloseable {
+public class PsqlStore implements Store {
     private static final Logger LOGGER = LogManager.getLogger(PsqlStore.class.getName());
     private Connection connection;
 
