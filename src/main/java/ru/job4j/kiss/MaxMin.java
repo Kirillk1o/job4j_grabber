@@ -8,7 +8,7 @@ public class MaxMin {
 
     public <T> T met(List<T> value, Comparator<T> comparator, Predicate<Integer> predicate) {
         if (value.isEmpty()) {
-            throw new IllegalArgumentException("List is Empty");
+            throw new IllegalArgumentException("List is Empt");
         }
         T tmp = value.get(0); // пол 1 ел
         for (int i = 1; i < value.size(); i++) {
