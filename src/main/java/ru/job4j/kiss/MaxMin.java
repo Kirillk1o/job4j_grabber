@@ -10,7 +10,7 @@ public class MaxMin {
         if (value.isEmpty()) {
             throw new IllegalArgumentException("List is Empty");
         }
-        T tmp = value.get(0); // пол 1 ел
+        T tmp = value.get(0);
         for (int i = 1; i < value.size(); i++) {
             if (predicate.test(comparator.compare(tmp, value.get(i)))) {
                 tmp = value.get(i);
