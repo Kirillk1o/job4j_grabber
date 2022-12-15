@@ -1,6 +1,8 @@
 package ru.job4j.kiss;
 
 import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -11,9 +13,9 @@ public class MaxMin {
             throw new IllegalArgumentException("List is Empty");
         }
         T tmp = value.get(0);
-        for (int i = 1; i < value.size(); i++) {
-            if (predicate.test(comparator.compare(tmp, value.get(i)))) {
-                tmp = value.get(i);
+        for (T val : value) {
+            if (predicate.test(comparator.compare(tmp, val))) {
+                tmp = val;
             }
         }
         return tmp;
